@@ -1,8 +1,8 @@
-![Release](https://img.shields.io/github/release/bmatcuk/doublestar.svg?branch=master)
-[![Build Status](https://travis-ci.org/bmatcuk/doublestar.svg?branch=master)](https://travis-ci.org/bmatcuk/doublestar)
-[![codecov.io](https://img.shields.io/codecov/c/github/bmatcuk/doublestar.svg?branch=master)](https://codecov.io/github/bmatcuk/doublestar?branch=master)
+[![Build Status](https://travis-ci.org/clns/doublestar.svg?branch=master)](https://travis-ci.org/clns/doublestar)
 
 # doublestar
+
+> Fork Info: Add support for absolute path patterns on Windows until [bmatcuk/doublestar#6](https://github.com/bmatcuk/doublestar/pull/6) is merged.
 
 **doublestar** is a [golang](http://golang.org/) implementation of path pattern matching and globbing with support for "doublestar" (aka globstar: `**`) patterns.
 
@@ -22,13 +22,13 @@ You could find the children with patterns such as: `**/child*`, `grandparent/**/
 **doublestar** can be installed via `go get`:
 
 ```bash
-go get github.com/bmatcuk/doublestar
+go get github.com/clns/doublestar
 ```
 
 To use it in your code, you must import it:
 
 ```go
-import "github.com/bmatcuk/doublestar"
+import "github.com/clns/doublestar"
 ```
 
 ## Functions

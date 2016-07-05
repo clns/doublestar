@@ -2,7 +2,12 @@
 
 package doublestar
 
-import "testing"
+import (
+  "testing"
+  "runtime"
+  "path/filepath"
+  "reflect"
+)
 
 type MatchTest struct {
   pattern, s string
@@ -130,10 +135,47 @@ func testGlobWith(t *testing.T, idx int, tt MatchTest) {
   }
 }
 
+func TestGlobWindows(t *testing.T) {
+  if runtime.GOOS != "windows" {
+    t.Skip("Skip on non-Windows")
+  }
+  expected := []string{
+    "test\\a\\abc",
+    "test\\a\\b",
+    "test\\a\\b\\c",
+    "test\\a\\b\\c\\d",
+    "test\\a\\c",
+    "test\\a\\c\\b",
+  }
+  patterns := []string{
+    "test\\a\\**",
+  }
+
+  // make paths absolute
+  abs := func(in []string) {
+    t := len(in)
+    for i:=0; i<t; i++ {
+      abs, _ := filepath.Abs(in[i])
+      in = append(in, abs)
+    }
+  }
+  abs(expected)
+  abs(patterns)
+
+  for _, p := range patterns[1:] {
+    matches, err := Glob(p)
+    if err != nil {
+      t.Fatalf("pattern: %s, err: %v", p, err)
+    }
+    if !reflect.DeepEqual(matches, expected) {
+      t.Fatalf("pattern: %s\nexpected: %v\ngot: %v", p, expected, matches)
+    }
+  }
+}
+
 func inSlice(s string, a []string) bool {
   for _, i := range a {
     if i == s { return true }
   }
   return false
 }
-

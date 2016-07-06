@@ -4,9 +4,8 @@ package doublestar
 
 import (
   "testing"
-  "runtime"
   "path/filepath"
-  "reflect"
+  "runtime"
 )
 
 type MatchTest struct {
@@ -86,6 +85,11 @@ var matchTests = []MatchTest{
   {"ab{c,d}", "abc", true, nil, true},
   {"ab{c,d,*}", "abcde", true, nil, true},
   {"ab{c,d}[", "abcd", false, ErrBadPattern, true},
+  {"img/**/*.jpg", "img/blank.jpg", true, nil, true},
+  {"img/**/*.jpg", "img/wallpapers/wall3.jpg", true, nil, true},
+  {"img/**/*.jpg", "img/wallpapers/big/bigwall.jpg", true, nil, true},
+  {"img/**/*.jpg", "img/wallpapers/wall2.png", false, nil, true},
+  {"img/**/*.jpg", "img/README.md", false, nil, true},
 }
 
 func TestMatch(t *testing.T) {
@@ -139,36 +143,35 @@ func TestGlobWindows(t *testing.T) {
   if runtime.GOOS != "windows" {
     t.Skip("Skip on non-Windows")
   }
-  expected := []string{
-    "test\\a\\abc",
-    "test\\a\\b",
-    "test\\a\\b\\c",
-    "test\\a\\b\\c\\d",
-    "test\\a\\c",
-    "test\\a\\c\\b",
+  // make path absolute
+  abs := func(in string) string {
+    abs, _ := filepath.Abs(in)
+    return abs
   }
-  patterns := []string{
-    "test\\a\\**",
+  matchTests := []MatchTest{
+    {"test\\a\\**", "test\\a\\b\\c\\d", true, nil, true},
+    {"test\\a\\**", "test\\a\\abc", true, nil, true},
+    {abs("test\\a\\**"), abs("test\\a\\b\\c\\d"), true, nil, true},
+    {abs("test\\a\\**"), abs("test\\a\\abc"), true, nil, true},
+    {"test\\img\\**\\*.jpg", "test\\img\\wallpapers\\big\\bigwall.jpg", true, nil, true},
+    {"test\\img\\**\\*.jpg", "test\\img\\wallpapers\\wall1.jpg", true, nil, true},
+    {"test\\img\\**\\*.jpg", "test\\img\\blank.jpg", true, nil, true},
+    {abs("test\\img\\**\\*.jpg"), abs("test\\img\\wallpapers\\big\\bigwall.jpg"), true, nil, true},
+    {abs("test\\img\\**\\*.jpg"), abs("test\\img\\wallpapers\\wall1.jpg"), true, nil, true},
+    {abs("test\\img\\**\\*.jpg"), abs("test\\img\\blank.jpg"), true, nil, true},
+    {abs("test\\img\\**\\*.jpg"), abs("test\\img\\wallpapers\\wall2.png"), false, nil, true},
   }
-
-  // make paths absolute
-  abs := func(in []string) {
-    t := len(in)
-    for i:=0; i<t; i++ {
-      abs, _ := filepath.Abs(in[i])
-      in = append(in, abs)
+  for idx, tt := range matchTests {
+    matches, err := Glob(tt.pattern)
+    if inSlice(tt.s, matches) != tt.match {
+      if tt.match {
+        t.Errorf("#%v. Glob(%#q) = %#v - doesn't contain %v, but should", idx, tt.pattern, matches, tt.s)
+      } else {
+        t.Errorf("#%v. Glob(%#q) = %#v - contains %v, but shouldn't", idx, tt.pattern, matches, tt.s)
+      }
     }
-  }
-  abs(expected)
-  abs(patterns)
-
-  for _, p := range patterns[1:] {
-    matches, err := Glob(p)
-    if err != nil {
-      t.Fatalf("pattern: %s, err: %v", p, err)
-    }
-    if !reflect.DeepEqual(matches, expected) {
-      t.Fatalf("pattern: %s\nexpected: %v\ngot: %v", p, expected, matches)
+    if err != tt.err {
+      t.Errorf("#%v. Glob(%#q) has error %v, but should be %v", idx, tt.pattern, err, tt.err)
     }
   }
 }
